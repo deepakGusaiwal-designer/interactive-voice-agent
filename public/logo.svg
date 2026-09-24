@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 140" fill="none">
+  <defs>
+    <!-- Shiny Metallic Chrome White Gradient -->
+    <linearGradient id="chromeWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#f0f9ff"/>
+      <stop offset="70%" stop-color="#bae6fd"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <!-- Shiny Electric Blue Gradient for 'TALK' and Accents -->
+    <linearGradient id="electricBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="30%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+
+    <!-- Radial Dark Obsidian Badge Background -->
+    <radialGradient id="badgeBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0c192e"/>
+      <stop offset="85%" stop-color="#030712"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- Electric Neon Glow Filter -->
+    <filter id="blueNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.05
+        0 0 0 0 0.65
+        0 0 0 0 0.98
+        0 0 0 1.2 0" in="blur" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Intense Specular Spark Filter -->
+    <filter id="starGleam" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@700;800;900&amp;display=swap');
+    .logo-chaos-text {
+      font-family: 'Google Sans', -apple-system, sans-serif;
+      font-weight: 900;
+      font-size: 42px;
+      letter-spacing: 0.12em;
+    }
+    .logo-talk-text {
+      font-family: 'Google Sans', -apple-system, sans-serif;
+      font-weight: 800;
+      font-size: 42px;
+      letter-spacing: 0.16em;
+    }
+    .logo-sub-tag {
+      font-family: 'Google Sans', -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.42em;
+      fill: #7dd3fc;
+      opacity: 0.85;
+    }
+  </style>
+
+  <!-- ================= EMBLEM ICON (Left) ================= -->
+  <g transform="translate(15, 10)">
+    <!-- Obsidian Circle Base with Shiny Border -->
+    <circle cx="60" cy="60" r="54" fill="url(#badgeBg)" stroke="url(#chromeWhite)" stroke-width="2.5"/>
+    <circle cx="60" cy="60" r="48" fill="none" stroke="#0284c7" stroke-width="1.2" stroke-opacity="0.5"/>
+
+    <!-- Subtle Inner Horizon Ring -->
+    <circle cx="60" cy="60" r="38" fill="none" stroke="url(#electricBlue)" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+
+    <!-- Dynamic Audio Chaos Waves (Electric Blue Glow Base) -->
+    <path d="M18 60 L32 60 L39 40 L47 78 L56 30 L64 88 L72 36 L81 74 L88 48 L96 60 L102 60" 
+          stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" 
+          filter="url(#blueNeonGlow)"/>
+
+    <!-- Dynamic Audio Chaos Waves (Shiny Chrome White Core Line) -->
+    <path d="M18 60 L32 60 L39 40 L47 78 L56 30 L64 88 L72 36 L81 74 L88 48 L96 60 L102 60" 
+          stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Shiny Specular Glints / Stars on Apexes -->
+    <!-- Highest Top Apex (56, 30) -->
+    <circle cx="56" cy="30" r="3" fill="#ffffff" filter="url(#starGleam)"/>
+    <line x1="56" y1="23" x2="56" y2="37" stroke="#ffffff" stroke-width="1.2" filter="url(#starGleam)"/>
+    <line x1="49" y1="30" x2="63" y2="30" stroke="#ffffff" stroke-width="1.2" filter="url(#starGleam)"/>
+
+    <!-- Lowest Bottom Apex (64, 88) -->
+    <circle cx="64" cy="88" r="3" fill="#ffffff" filter="url(#starGleam)"/>
+    <line x1="64" y1="81" x2="64" y2="95" stroke="#ffffff" stroke-width="1.2" filter="url(#starGleam)"/>
+    <line x1="57" y1="88" x2="71" y2="88" stroke="#ffffff" stroke-width="1.2" filter="url(#starGleam)"/>
+
+    <!-- Metallic Edge Light Sheen -->
+    <path d="M22 42 A 54 54 0 0 1 92 24" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- ================= TYPOGRAPHY (Right) ================= -->
+  <g transform="translate(150, 74)">
+    <!-- Backglow for text -->
+    <text x="0" y="0" class="logo-chaos-text" fill="#0284c7" filter="url(#blueNeonGlow)" opacity="0.75">CHAOS</text>
+    <text x="175" y="0" class="logo-talk-text" fill="#0284c7" filter="url(#blueNeonGlow)" opacity="0.75">TALK</text>
+
+    <!-- Shiny Foreground text: CHAOS in Shiny White Chrome, TALK in Electric Blue -->
+    <text x="0" y="0" class="logo-chaos-text" fill="url(#chromeWhite)">CHAOS</text>
+    <text x="175" y="0" class="logo-talk-text" fill="url(#electricBlue)">TALK</text>
+
+    <!-- Subtitle / Brand Tagline -->
+    <text x="3" y="24" class="logo-sub-tag">INTERACTIVE VOICE AI</text>
+  </g>
+</svg>
