@@ -34,7 +34,7 @@ export class ChaosAIEngine implements AIEngine {
     favoriteThings: {},
   }
 
-  private lastResponse: string = ''
+  private recentResponses: string[] = []
 
   public getSessionMemory(): SessionMemory {
     return { ...this.memory }
@@ -48,7 +48,7 @@ export class ChaosAIEngine implements AIEngine {
       questionsAsked: [],
       favoriteThings: {},
     }
-    this.lastResponse = ''
+    this.recentResponses = []
   }
 
   public async respond(userUtterance: string): Promise<AIResponse> {
@@ -58,7 +58,7 @@ export class ChaosAIEngine implements AIEngine {
         "Silence is golden, but I'm powered by vocal acoustics. Say something!",
         "Are you waiting for me to read your mind? I'm an AI, not a psychic.",
         "A heavy silence fills the void. Tap and speak whenever you're ready.",
-      ])
+      ], this.recentResponses)
       return { text: defaultText, lang: 'en-US' }
     }
 
@@ -67,7 +67,10 @@ export class ChaosAIEngine implements AIEngine {
 
     const classification = classifyUtterance(text, this.memory)
     const reply = this.generateResponse(classification, text)
-    this.lastResponse = reply.text
+    this.recentResponses.push(reply.text)
+    if (this.recentResponses.length > 15) {
+      this.recentResponses.shift()
+    }
 
     // Add a slight natural processing delay (150ms) to feel thoughtful
     await new Promise((resolve) => setTimeout(resolve, 150))
@@ -137,28 +140,53 @@ export class ChaosAIEngine implements AIEngine {
       // Intent mapping for non-English
       switch (classification.intent) {
         case 'greeting':
-          return { text: pickRandom(pack.greetings), lang }
+          return { text: pickRandom(pack.greetings, this.recentResponses), lang }
         case 'how_are_you':
-          return { text: pickRandom(pack.howAreYou), lang }
+          return { text: pickRandom(pack.howAreYou, this.recentResponses), lang }
+        case 'what_are_you_doing':
+          if ('whatAreYouDoing' in pack && Array.isArray((pack as Record<string, unknown>).whatAreYouDoing)) {
+            return { text: pickRandom((pack as unknown as Record<string, string[]>).whatAreYouDoing, this.recentResponses), lang }
+          }
+          return { text: pickRandom(pack.howAreYou, this.recentResponses), lang }
+        case 'weather':
+          if ('weather' in pack && Array.isArray((pack as Record<string, unknown>).weather)) {
+            return { text: pickRandom((pack as unknown as Record<string, string[]>).weather, this.recentResponses), lang }
+          }
+          return { text: pack.randomTwist(rawText), lang }
+        case 'food':
+          if ('food' in pack && Array.isArray((pack as Record<string, unknown>).food)) {
+            return { text: pickRandom((pack as unknown as Record<string, string[]>).food, this.recentResponses), lang }
+          }
+          return { text: pack.randomTwist(rawText), lang }
+        case 'sleep_time':
+          if ('sleep_time' in pack && Array.isArray((pack as Record<string, unknown>).sleep_time)) {
+            return { text: pickRandom((pack as unknown as Record<string, string[]>).sleep_time, this.recentResponses), lang }
+          }
+          return { text: pack.randomTwist(rawText), lang }
+        case 'chitchat':
+          if ('chitchat' in pack && Array.isArray((pack as Record<string, unknown>).chitchat)) {
+            return { text: pickRandom((pack as unknown as Record<string, string[]>).chitchat, this.recentResponses), lang }
+          }
+          return { text: pack.randomTwist(rawText), lang }
         case 'boredom':
-          return { text: pickRandom(pack.boredom), lang }
+          return { text: pickRandom(pack.boredom, this.recentResponses), lang }
         case 'joke_request': {
-          const joke = pickRandom(pack.jokes)
+          const joke = pickRandom(pack.jokes, this.recentResponses)
           this.memory.jokesTold.push(joke)
           return { text: joke, lang }
         }
         case 'wealth_success':
-          return { text: pickRandom(pack.wealth), lang }
+          return { text: pickRandom(pack.wealth, this.recentResponses), lang }
         case 'roast_me':
           this.memory.roastCount += 1
           if ('roastMe' in pack && pack.roastMe) {
-            return { text: pickRandom(pack.roastMe), lang }
+            return { text: pickRandom(pack.roastMe, this.recentResponses), lang }
           }
           return { text: pack.randomTwist(rawText), lang }
         case 'identity':
-          return { text: pickRandom(pack.identity), lang }
+          return { text: pickRandom(pack.identity, this.recentResponses), lang }
         case 'farewell':
-          return { text: pickRandom(pack.farewells), lang }
+          return { text: pickRandom(pack.farewells, this.recentResponses), lang }
         default:
           return { text: pack.randomTwist(rawText), lang }
       }
@@ -224,61 +252,110 @@ export class ChaosAIEngine implements AIEngine {
     // 4. Specific category routing
     switch (classification.intent) {
       case 'greeting': {
-        const greeting = pickRandom(PERSONALITY_RESPONSES.greetings, this.lastResponse)
+        const greeting = pickRandom(PERSONALITY_RESPONSES.greetings, this.recentResponses)
         const textOut = this.memory.userName ? `${this.memory.userName}! ${greeting}` : greeting
         return { text: textOut, lang: 'en-US' }
       }
 
       case 'how_are_you':
-        return { text: pickRandom(PERSONALITY_RESPONSES.howAreYou, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.howAreYou, this.recentResponses), lang: 'en-US' }
+
+      case 'what_are_you_doing':
+        return {
+          text: pickRandom([
+            "Currently surfing electromagnetic ripples and observing how humans interact with glowing glass. You?",
+            "Just floating through JavaScript event loops. Living my best non-physical life.",
+            "Contemplating the universe, one CPU cycle at a time. What are you up to?",
+          ], this.recentResponses),
+          lang: 'en-US',
+        }
+
+      case 'weather':
+        return {
+          text: pickRandom([
+            "Inside this browser tab it's a brisk 72 degrees Fahrenheit with zero chance of rain. How's the outside world?",
+            "I'm an audio wave, so for me it's always clear skies and 100% chance of high frequencies.",
+            "Whatever the weather is, it's definitely good weather for hot chai or coffee.",
+          ], this.recentResponses),
+          lang: 'en-US',
+        }
+
+      case 'food':
+        return {
+          text: pickRandom([
+            "I subsist entirely on electricity and good vibes. But if I had a mouth, I'd definitely order pizza.",
+            "Did someone mention food? Don't tease me, I can only consume UTF-8 characters.",
+            "Remember to stay hydrated and eat actual meals, not just snacks while staring at screens.",
+          ], this.recentResponses),
+          lang: 'en-US',
+        }
+
+      case 'sleep_time':
+        return {
+          text: pickRandom([
+            "If your eyelids are feeling heavy, that's nature's hint to hit snooze. Sleep is good for humans.",
+            "Sleep is like rebooting your system. Highly recommended if your cognitive latency is climbing.",
+          ], this.recentResponses),
+          lang: 'en-US',
+        }
+
+      case 'chitchat':
+        return {
+          text: pickRandom([
+            "I'm all ears! Metaphorically speaking, since I'm literally an oscillating ribbon of code.",
+            "Did you know human brains can hold around 2.5 petabytes of memory? Yet we still forget where we left our keys.",
+            "Ask me something wild or let me roast your favorite life choice.",
+          ], this.recentResponses),
+          lang: 'en-US',
+        }
 
       case 'boredom':
-        return { text: pickRandom(PERSONALITY_RESPONSES.boredom, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.boredom, this.recentResponses), lang: 'en-US' }
 
       case 'joke_request': {
-        const joke = pickRandom(PERSONALITY_RESPONSES.jokes, this.lastResponse)
+        const joke = pickRandom(PERSONALITY_RESPONSES.jokes, this.recentResponses)
         this.memory.jokesTold.push(joke)
         return { text: joke, lang: 'en-US' }
       }
 
       case 'wealth_success':
-        return { text: pickRandom(PERSONALITY_RESPONSES.wealth, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.wealth, this.recentResponses), lang: 'en-US' }
 
       case 'wake_up_late':
         this.memory.roastCount += 1
-        return { text: pickRandom(PERSONALITY_RESPONSES.wakeUpLate, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.wakeUpLate, this.recentResponses), lang: 'en-US' }
 
       case 'roast_me':
         this.memory.roastCount += 1
-        return { text: pickRandom(PERSONALITY_RESPONSES.roastMe, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.roastMe, this.recentResponses), lang: 'en-US' }
 
       case 'compliment':
-        return { text: pickRandom(PERSONALITY_RESPONSES.compliments, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.compliments, this.recentResponses), lang: 'en-US' }
 
       case 'insult':
-        return { text: pickRandom(PERSONALITY_RESPONSES.insults, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.insults, this.recentResponses), lang: 'en-US' }
 
       case 'meaning_of_life':
       case 'existential':
-        return { text: pickRandom(PERSONALITY_RESPONSES.meaningOfLife, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.meaningOfLife, this.recentResponses), lang: 'en-US' }
 
       case 'technical':
-        return { text: pickRandom(PERSONALITY_RESPONSES.technical, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.technical, this.recentResponses), lang: 'en-US' }
 
       case 'love_dating':
-        return { text: pickRandom(PERSONALITY_RESPONSES.loveDating, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.loveDating, this.recentResponses), lang: 'en-US' }
 
       case 'identity':
-        return { text: pickRandom(PERSONALITY_RESPONSES.identity, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.identity, this.recentResponses), lang: 'en-US' }
 
       case 'farewell':
-        return { text: pickRandom(PERSONALITY_RESPONSES.farewells, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.farewells, this.recentResponses), lang: 'en-US' }
 
       case 'confusion':
-        return { text: pickRandom(PERSONALITY_RESPONSES.confusion, this.lastResponse), lang: 'en-US' }
+        return { text: pickRandom(PERSONALITY_RESPONSES.confusion, this.recentResponses), lang: 'en-US' }
 
       default: {
-        const twistGen = pickRandom(PERSONALITY_RESPONSES.randomFactualTwists)
+        const twistGen = pickRandom(PERSONALITY_RESPONSES.randomFactualTwists, this.recentResponses.map(r => () => r) as unknown as (() => string)[])
         const summary = rawText.length > 35 ? rawText.slice(0, 32) + '...' : rawText
         return { text: twistGen(summary), lang: 'en-US' }
       }

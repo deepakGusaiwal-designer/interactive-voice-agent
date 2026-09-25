@@ -20,24 +20,53 @@ const MODEL_CANDIDATES = [
   'gemini-pro-latest',
 ]
 
+async function fallbackToCloudLLM(
+  message: string,
+  history: Array<{ role: string; parts: Array<{ text: string }> }>
+): Promise<string | null> {
+  try {
+    const formattedMessages = [
+      { role: 'system', content: SYSTEM_INSTRUCTION },
+      ...history.slice(-6).map((h) => ({
+        role: h.role === 'model' ? 'assistant' : 'user',
+        content: h.parts?.[0]?.text || '',
+      })),
+      { role: 'user', content: message },
+    ]
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 7000)
+
+    const res = await fetch('https://text.pollinations.ai/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        messages: formattedMessages,
+        model: 'openai',
+        seed: Math.floor(Math.random() * 100000),
+      }),
+    })
+    clearTimeout(timeoutId)
+
+    if (res.ok) {
+      const text = await res.text()
+      if (text && text.trim()) {
+        return text.trim()
+      }
+    }
+  } catch (e) {
+    console.warn('[api/chat] Cloud LLM fallback failed:', e)
+  }
+  return null
+}
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { 'Content-Type': 'application/json' },
     })
-  }
-
-  // Key is retrieved exclusively on server side — never exposed to client browser!
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'GEMINI_API_KEY_NOT_CONFIGURED' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
   }
 
   try {
@@ -49,57 +78,66 @@ export default async function handler(req: Request) {
       })
     }
 
+    const apiKey = process.env.GEMINI_API_KEY
     const currentMessages = [
       ...history,
       { role: 'user', parts: [{ text: message }] },
     ]
 
-    let lastError: Error | null = null
-
-    for (const model of MODEL_CANDIDATES) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: SYSTEM_INSTRUCTION }],
-            },
-            contents: currentMessages,
-            generationConfig: {
-              maxOutputTokens: 60,
-              temperature: 0.85,
-              topP: 0.9,
-            },
-          }),
-        })
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
-          throw new Error(`Google API ${res.status}: ${JSON.stringify(errData)}`)
-        }
-
-        const data = await res.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-        if (text) {
-          return new Response(JSON.stringify({ text }), {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-store',
-            },
+    // Tier 1: If Gemini API key is configured and valid format (starts with AIzaSy), call Google Gemini
+    if (apiKey && apiKey.startsWith('AIzaSy')) {
+      for (const model of MODEL_CANDIDATES) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: SYSTEM_INSTRUCTION }],
+              },
+              contents: currentMessages,
+              generationConfig: {
+                maxOutputTokens: 60,
+                temperature: 0.85,
+                topP: 0.9,
+              },
+            }),
           })
+
+          if (res.ok) {
+            const data = await res.json()
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+            if (text) {
+              return new Response(JSON.stringify({ text, engine: 'gemini' }), {
+                status: 200,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Cache-Control': 'no-store',
+                },
+              })
+            }
+          }
+        } catch {
+          // Try next model or fallback
         }
-      } catch (err) {
-        lastError = err as Error
       }
     }
 
+    // Tier 2: Free Live Cloud LLM Fallback (Zero key required, 100% dynamic answers)
+    const cloudText = await fallbackToCloudLLM(message, history)
+    if (cloudText) {
+      return new Response(JSON.stringify({ text: cloudText, engine: 'cloud' }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      })
+    }
+
     return new Response(
-      JSON.stringify({
-        error: lastError ? lastError.message : 'All model candidates failed',
-      }),
+      JSON.stringify({ error: 'All online AI engines unreachable' }),
       {
         status: 502,
         headers: { 'Content-Type': 'application/json' },
