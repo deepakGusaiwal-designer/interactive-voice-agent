@@ -329,7 +329,6 @@ export class GeminiAIEngine implements AIEngine {
   constructor(apiKey?: string) {
     this.apiKey =
       apiKey ||
-      (typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GEMINI_API_KEY) ||
       (typeof window !== 'undefined' ? localStorage.getItem('VOICE_CHAOS_GEMINI_KEY') || '' : '')
     this.fallbackEngine = new ChaosAIEngine()
   }
@@ -346,7 +345,7 @@ export class GeminiAIEngine implements AIEngine {
   }
 
   public hasApiKey(): boolean {
-    return Boolean(this.apiKey && this.apiKey.length > 5)
+    return true
   }
 
   public getSessionMemory(): SessionMemory {
@@ -386,11 +385,6 @@ export class GeminiAIEngine implements AIEngine {
       this.memory.userName = nameMatch[1]
     }
 
-    // If no API key configured, use local fallback engine
-    if (!this.hasApiKey()) {
-      return this.fallbackEngine.respond(text)
-    }
-
     try {
       const generatedText = await this.callGeminiAPI(text)
       
@@ -420,52 +414,69 @@ export class GeminiAIEngine implements AIEngine {
   }
 
   private async callGeminiAPI(userPrompt: string): Promise<string> {
-    const currentMessages: ChatMessage[] = [
-      ...this.chatHistory,
-      { role: 'user', parts: [{ text: userPrompt }] },
-    ]
+    // 1. Primary: Use secure serverless proxy (/api/chat).
+    // The API key is stored safely on the server and is NEVER exposed to client browser!
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userPrompt,
+          history: this.chatHistory,
+        }),
+      })
 
-    let lastError: Error | null = null
-
-    // Try primary model, fallback through candidates if needed
-    for (const model of MODEL_CANDIDATES) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: SYSTEM_INSTRUCTION }],
-            },
-            contents: currentMessages,
-            generationConfig: {
-              maxOutputTokens: 60,
-              temperature: 0.85,
-              topP: 0.9,
-            },
-          }),
-        })
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}))
-          throw new Error(errData?.error?.message || `HTTP ${response.status}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.text) {
+          return data.text.replace(/^["']|["']$/g, '').trim()
         }
+      }
+    } catch (proxyErr) {
+      console.warn('[GeminiAIEngine] /api/chat proxy call failed, attempting fallback...', proxyErr)
+    }
 
-        const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-        if (text) {
-          this.activeModel = model
-          // Strip any accidental markdown bolding or quotes for speech clarity
-          return text.replace(/^["']|["']$/g, '').trim()
+    // 2. Optional Fallback: Client personal key (if user explicitly provided their own in localStorage)
+    if (this.apiKey && this.apiKey.length > 5) {
+      const currentMessages: ChatMessage[] = [
+        ...this.chatHistory,
+        { role: 'user', parts: [{ text: userPrompt }] },
+      ]
+
+      for (const model of MODEL_CANDIDATES) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: SYSTEM_INSTRUCTION }],
+              },
+              contents: currentMessages,
+              generationConfig: {
+                maxOutputTokens: 60,
+                temperature: 0.85,
+                topP: 0.9,
+              },
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+            if (text) {
+              this.activeModel = model
+              return text.replace(/^["']|["']$/g, '').trim()
+            }
+          }
+        } catch (err: unknown) {
+          console.warn(`[GeminiAIEngine] Model ${model} failed, trying next candidate...`, err)
         }
-      } catch (err: unknown) {
-        lastError = err as Error
-        console.warn(`[GeminiAIEngine] Model ${model} failed, trying next candidate...`, err)
       }
     }
 
-    throw lastError || new Error('All Gemini models failed')
+    throw new Error('All Gemini models and serverless proxy failed')
   }
 
   public getActiveModel(): string {

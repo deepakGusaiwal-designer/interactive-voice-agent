@@ -13,8 +13,9 @@ An interactive, high-energy conversational AI voice experience with real-time sp
 - 🍏 **Apple Liquid Glass Interface**: Frosted multi-turn chat bubbles with specular edge highlights, volumetric glass depth, and auto-scrolling conversation history.
 - 🇮🇳 **Bilingual & Multilingual Engine**: Seamless auto-detection between Hindi (हिन्दी) and English (US), plus full native conversational understanding.
 - ⚡ **Dual Engine (Gemini + Local Offline Character)**:
-  - Connects to Google Gemini AI via `VITE_GEMINI_API_KEY`.
+  - Connects to Google Gemini AI securely via serverless proxy using `GEMINI_API_KEY`.
   - Seamless zero-config fallback to a built-in character engine with witty roasts, jokes, and memory.
+- 🛡️ **100% Server-Side API Key Protection**: Your Gemini API key is stored securely in Vercel environment variables and is never exposed in client-side code or browser network calls.
 - 🔑 **Bring Your Own Key (BYOK)**: Users visiting the public link can optionally paste their personal Gemini API key stored privately in their browser's local storage.
 - 📱 **Mobile & Desktop Optimized**: Adaptive single-row mobile header with settings dropdown popover, touch-friendly controls, and full HTTPS support.
 
@@ -32,7 +33,7 @@ npm install
 ### 2. Configure Environment (Optional)
 Create a `.env` file in the root directory:
 ```env
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 *(If omitted, the agent will operate on its built-in offline personality engine.)*
 
@@ -58,8 +59,8 @@ Open [http://localhost:5173](http://localhost:5173) in Google Chrome, Microsoft 
    ```
 2. Go to [vercel.com](https://vercel.com) and click **"Add New..."** → **"Project"**.
 3. Select your `chaos-talk` repository.
-4. *(Optional)* Add Environment Variable:
-   - Name: `VITE_GEMINI_API_KEY`
+4. Add Environment Variable:
+   - Name: `GEMINI_API_KEY`
    - Value: `<Your Google Gemini API Key>`
 5. Click **Deploy**.
 
@@ -72,8 +73,9 @@ npx vercel --prod
 ---
 
 ## 🔒 Security & Privacy
-- **Microphone**: Audio is processed client-side via the browser's Web Speech API and is never recorded to any external database.
-- **API Keys**: Custom API keys entered in the browser UI remain strictly inside the user's private `localStorage` on their device.
+- **Zero API Key Leakage**: The secret `GEMINI_API_KEY` lives strictly on Vercel's backend serverless edge functions (`/api/chat` and `/api/tts`). The browser bundle contains **0% of your key**, and browser DevTools/Network requests only see your own `/api/chat` domain.
+- **Microphone**: Audio is processed client-side via the browser's Web Speech API and is never recorded or stored to any external database.
+- **Client Storage**: Custom API keys entered manually via UI settings remain strictly inside the user's private `localStorage` on their device.
 
 ---
 

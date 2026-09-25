@@ -47,30 +47,20 @@ export class SpeechSynthesisService {
     return typeof window !== 'undefined' && ('speechSynthesis' in window || 'AudioContext' in window)
   }
 
-  private getApiKey(): string {
-    return (
-      (typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GEMINI_API_KEY) ||
-      (typeof window !== 'undefined' ? localStorage.getItem('VOICE_CHAOS_GEMINI_KEY') || '' : '')
-    )
-  }
-
   public async speak(text: string, options: SpeakOptions = {}): Promise<void> {
     this.cancel()
 
-    // If Studio HD mode is explicitly requested, generate 24kHz HD PCM
+    // If Studio HD mode is explicitly requested, generate 24kHz HD PCM via server proxy
     if (options.mode === 'studio') {
-      const apiKey = this.getApiKey()
-      if (apiKey) {
-        try {
-          const played = await this.speakNeural(text, apiKey, options)
-          if (played) return
-        } catch (err: unknown) {
-          const errObj = err as Error
-          if (errObj.name !== 'AbortError') {
-            console.warn('[SpeechSynthesis] Studio Neural TTS failed, falling back to fast natural voice:', err)
-          } else {
-            return
-          }
+      try {
+        const played = await this.speakNeural(text, options)
+        if (played) return
+      } catch (err: unknown) {
+        const errObj = err as Error
+        if (errObj.name !== 'AbortError') {
+          console.warn('[SpeechSynthesis] Studio Neural TTS failed, falling back to fast natural voice:', err)
+        } else {
+          return
         }
       }
     }
@@ -80,43 +70,23 @@ export class SpeechSynthesisService {
   }
 
   /**
-   * Speak using Google's Neural Human TTS (24kHz HD PCM)
+   * Speak using Google's Neural Human TTS (24kHz HD PCM) via secure serverless proxy
    * Plays through Web Audio AudioContext directly connected to our AnalyserNode
    */
   private async speakNeural(
     text: string,
-    apiKey: string,
     options: SpeakOptions,
   ): Promise<boolean> {
     const voiceName: NeuralVoiceName = options.voiceName || 'Puck'
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`
-
     this.abortController = new AbortController()
 
-    const response = await fetch(url, {
+    const response = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: this.abortController.signal,
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `Read the following text aloud exactly as written:\n"${text}"`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName,
-              },
-            },
-          },
-        },
+        text,
+        voiceName,
       }),
     })
 
@@ -125,7 +95,7 @@ export class SpeechSynthesisService {
     }
 
     const data = await response.json()
-    const base64Data = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+    const base64Data = data.audio
     if (!base64Data) {
       return false
     }

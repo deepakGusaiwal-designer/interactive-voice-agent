@@ -58,8 +58,8 @@ vec3 strandColor(float t) {
 }
 
 void main() {
-  // Reference size capped to ensure the center wave is sleek, focused, and compact
-  float refWidth = min(min(uResolution.x * 0.75, uResolution.y * 1.4), 480.0);
+  // Reference size expanded by 20% to give a wider, more expansive presence
+  float refWidth = min(min(uResolution.x * 0.90, uResolution.y * 1.68), 576.0);
   float refHeight = min(uResolution.y, 360.0);
   
   vec2 uv;

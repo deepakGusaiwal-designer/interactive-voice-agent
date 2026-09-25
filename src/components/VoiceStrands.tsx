@@ -37,7 +37,7 @@ export const VoiceStrands: React.FC<VoiceStrandsProps> = ({
             glow: 1.55 + audioLevel * 0.25,
             intensity: 0.5 + audioLevel * 0.18,
             saturation: 1.6,
-            scale: 1.05,
+            scale: 1.26,
             taper: 4.2,
           }
 
@@ -52,7 +52,7 @@ export const VoiceStrands: React.FC<VoiceStrandsProps> = ({
             glow: 1.65,
             intensity: 0.58,
             saturation: 1.6,
-            scale: 1.05,
+            scale: 1.26,
             taper: 4.0,
           }
 
@@ -67,7 +67,7 @@ export const VoiceStrands: React.FC<VoiceStrandsProps> = ({
             glow: 1.60 + audioLevel * 0.25,
             intensity: 0.55 + audioLevel * 0.18,
             saturation: 1.6,
-            scale: 1.05,
+            scale: 1.26,
             taper: 4.2,
           }
 
@@ -82,7 +82,7 @@ export const VoiceStrands: React.FC<VoiceStrandsProps> = ({
             glow: 1.5,
             intensity: 0.45,
             saturation: 1.5,
-            scale: 0.95,
+            scale: 1.14,
             taper: 4.0,
           }
 
@@ -98,7 +98,7 @@ export const VoiceStrands: React.FC<VoiceStrandsProps> = ({
             glow: 1.5,
             intensity: 0.48,
             saturation: 1.5,
-            scale: 1.05,
+            scale: 1.26,
             taper: 4.2,
           }
       }

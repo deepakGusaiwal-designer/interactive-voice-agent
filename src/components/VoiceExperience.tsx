@@ -14,15 +14,10 @@ import {
   Headphones,
   Square,
   Mic,
-  AudioWaveform,
   SendHorizontal,
   RotateCcw,
-  Keyboard,
   ChevronDown,
   Check,
-  Key,
-  X,
-  ExternalLink,
 } from 'lucide-react'
 import { VoiceStrands } from './VoiceStrands'
 import { VoiceTranscript } from './VoiceTranscript'
@@ -31,7 +26,6 @@ import { ChaosTalkLogo } from './ChaosTalkLogo'
 import MoltenMetal from './react-bits/MoltenMetal'
 import { useVoiceAgent } from '../hooks/useVoiceAgent'
 import { getLanguageLabel } from '../ai/personality'
-import { globalGeminiAIEngine } from '../ai/geminiEngine'
 
 export const VoiceExperience: React.FC = () => {
   const {
@@ -55,11 +49,9 @@ export const VoiceExperience: React.FC = () => {
   } = useVoiceAgent()
 
   const [inputText, setInputText] = useState('')
+  const [isInputFocused, setIsInputFocused] = useState(false)
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
   const langDropdownRef = useRef<HTMLDivElement>(null)
-  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false)
-  const [customKeyInput, setCustomKeyInput] = useState(() => globalGeminiAIEngine.getApiKey())
-  const hasCustomKey = Boolean(customKeyInput && customKeyInput.length > 5)
 
   // Close dropdown on click outside or Escape key
   useEffect(() => {
@@ -87,43 +79,43 @@ export const VoiceExperience: React.FC = () => {
 
   const hasChat = Boolean(chatHistory.length > 0 || userTranscript || aiTranscript || state === 'thinking' || state === 'speaking')
 
-  // Dynamic Molten Metal atmospheric colors reactive to Voice Chaos state (Deep Dark Obsidian Palette)
+  // Dynamic Molten Metal atmospheric colors reactive to Voice Chaos state (Deep Cinematic Liquid Chrome Palette)
   const moltenConfig = useMemo(() => {
     switch (state) {
       case 'listening':
         return {
-          color1: '#000000',
-          color2: '#021818', // Deep shadowy teal
-          color3: '#083838', // Dark stealth cyan
-          speed: 0.24,
+          color1: '#020b12',
+          color2: '#064e3b', // Deep emerald metallic
+          color3: '#06b6d4', // Electric cyan glint
+          speed: 0.28,
         }
       case 'thinking':
         return {
-          color1: '#000000',
-          color2: '#120422', // Dark obsidian purple
-          color3: '#24083d', // Stealth deep violet
-          speed: 0.32,
+          color1: '#0a0314',
+          color2: '#3b0764', // Deep purple obsidian
+          color3: '#a855f7', // Electric violet luster
+          speed: 0.35,
         }
       case 'speaking':
         return {
-          color1: '#000000',
-          color2: '#0d041c', // Dark midnight indigo
-          color3: '#1c0836', // Stealth amethyst
-          speed: 0.26,
+          color1: '#0d0312',
+          color2: '#701a75', // Midnight magenta chrome
+          color3: '#ec4899', // Radiant pink highlight
+          speed: 0.30,
         }
       case 'error':
         return {
-          color1: '#000000',
-          color2: '#1a0303', // Shadow wine
-          color3: '#300808', // Deep dark crimson
-          speed: 0.18,
+          color1: '#120303',
+          color2: '#7f1d1d', // Blood metal
+          color3: '#ef4444', // Fiery crimson
+          speed: 0.20,
         }
       case 'idle':
       default:
         return {
-          color1: '#000000', // Pure OLED black
-          color2: '#07080d', // Midnight graphite
-          color3: '#131520', // Stealth dark carbon
+          color1: '#040711', // Deep space obsidian
+          color2: '#1e1b4b', // Midnight metallic indigo
+          color3: '#2563eb', // Electric royal azure chrome
           speed: 0.18,
         }
     }
@@ -145,18 +137,18 @@ export const VoiceExperience: React.FC = () => {
           color2={moltenConfig.color2}
           color3={moltenConfig.color3}
           speed={moltenConfig.speed}
-          scale={3.8}
+          scale={3.5}
           detail={3}
-          glow={0.35}
-          coreSize={0.06}
-          swirl={1.0}
+          glow={1.4}
+          coreSize={0.09}
+          swirl={1.2}
           fold={-0.2}
-          blackPoint={0.24}
-          brightness={0.38}
-          opacity={0.22}
+          blackPoint={0.06}
+          brightness={1.2}
+          opacity={0.85}
           backgroundColor="#000000"
           mouseInteraction={true}
-          mouseStrength={0.2}
+          mouseStrength={0.25}
         />
       </div>
 
@@ -371,31 +363,6 @@ export const VoiceExperience: React.FC = () => {
                   </div>
                   {voiceMode === 'studio' && <Check size={13} className="lang-item-check" />}
                 </button>
-
-                <div className="lang-dropdown-divider" />
-
-                <div className="lang-dropdown-section-title">AI ENGINE</div>
-
-                <button
-                  type="button"
-                  className="lang-dropdown-item"
-                  onClick={() => {
-                    setIsLangDropdownOpen(false)
-                    setIsKeyModalOpen(true)
-                  }}
-                  role="menuitem"
-                >
-                  <div className="lang-item-left">
-                    <Key size={13} className="lang-item-icon key-icon" />
-                    <div className="lang-item-text-group">
-                      <span className="lang-item-name">Custom Gemini Key</span>
-                      <span className="lang-item-desc">
-                        {hasCustomKey ? 'Active (Saved in browser)' : 'Optional (Free Tier AI Active)'}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronDown size={11} className="lang-dropdown-chevron" style={{ transform: 'rotate(-90deg)' }} />
-                </button>
               </div>
             )}
           </div>
@@ -425,123 +392,114 @@ export const VoiceExperience: React.FC = () => {
         </div>
       </header>
 
-      {/* Optional Custom Gemini Key Modal (Apple Liquid Glass) */}
-      {isKeyModalOpen && (
-        <div className="apple-modal-overlay" onClick={() => setIsKeyModalOpen(false)}>
-          <div className="apple-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="apple-modal-header">
-              <div className="apple-modal-title-group">
-                <Key size={15} className="key-icon" />
-                <span className="apple-modal-title">Custom Gemini API Key</span>
-              </div>
-              <button
-                type="button"
-                className="apple-modal-close-btn"
-                onClick={() => setIsKeyModalOpen(false)}
-                title="Close"
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            <p className="apple-modal-desc">
-              Get an instant personal key from{' '}
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="apple-modal-link"
-              >
-                Google AI Studio <ExternalLink size={10} />
-              </a>
-              . Your key is stored securely in your browser's private local storage.
-            </p>
-
-            <div className="apple-modal-input-wrap">
-              <input
-                type="password"
-                className="apple-modal-input"
-                placeholder="Paste AIzaSy... key here"
-                value={customKeyInput}
-                onChange={(e) => setCustomKeyInput(e.target.value)}
-              />
-            </div>
-
-            <div className="apple-modal-actions">
-              {hasCustomKey && (
-                <button
-                  type="button"
-                  className="apple-modal-btn is-clear"
-                  onClick={() => {
-                    setCustomKeyInput('')
-                    globalGeminiAIEngine.setApiKey('')
-                    setIsKeyModalOpen(false)
-                  }}
-                >
-                  Remove Key
-                </button>
-              )}
-              <button
-                type="button"
-                className="apple-modal-btn is-primary"
-                onClick={() => {
-                  globalGeminiAIEngine.setApiKey(customKeyInput)
-                  setIsKeyModalOpen(false)
-                }}
-              >
-                Save &amp; Use
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Bottom Input Dock: Dual Voice/Text input */}
+      {/* Floating Bottom Input Dock: Ultra-Blurry Shiny Liquid Glass */}
       <footer className="voice-chaos-bottom-bar">
-        <form className="voice-input-dock" onSubmit={handleTextSubmit}>
-          <button
-            type="button"
-            className={`voice-mic-pill-btn ${state === 'listening' ? 'is-listening' : ''}`}
-            onClick={toggleInteraction}
-            title={state === 'listening' ? 'Click to submit voice' : 'Click to start speaking'}
-          >
-            {state === 'listening' ? (
-              <>
-                <AudioWaveform size={14} className="mic-wave-icon" />
-                <span>LISTENING</span>
-              </>
-            ) : (
-              <>
-                <Mic size={13} />
-                <span>TALK</span>
-              </>
-            )}
-          </button>
+        <form
+          className={`voice-input-dock ${
+            isInputFocused ? 'is-focused' : ''
+          } ${state === 'listening' ? 'is-listening' : ''} ${state === 'thinking' ? 'is-thinking' : ''}`}
+          onSubmit={handleTextSubmit}
+        >
 
+          {/* Layer 2: Brilliant Travelling Laser Shimmer Flare */}
+          <div className="voice-dock-shimmer-sweep" />
+
+          {/* Layer 3: Top Edge Razor-Sharp Prismatic Light Reflection */}
+          <div className="voice-dock-top-flare" />
+
+          {/* Shiny Star Sparkle Indicator on Left */}
+          <div className="voice-sparkle-pill" title="Chaos Talk AI">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="voice-sparkle-svg"
+            >
+              <defs>
+                <linearGradient id="chaos-sparkle-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#38bdf8" />
+                  <stop offset="50%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#818cf8" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M12 2C12 7.52 7.52 12 2 12C7.52 12 12 16.48 12 22C12 16.48 16.48 12 22 12C16.48 12 12 7.52 12 2Z"
+                fill="url(#chaos-sparkle-gradient)"
+              />
+              <path
+                d="M19 2.5C19 4.43 17.43 6 15.5 6C17.43 6 19 7.57 19 9.5C19 7.57 20.57 6 22.5 6C20.57 6 19 4.43 19 2.5Z"
+                fill="url(#chaos-sparkle-gradient)"
+                opacity="0.9"
+              />
+            </svg>
+          </div>
+
+          {/* Clean Prompt Text Input */}
           <div className="voice-text-input-wrap">
-            <Keyboard size={13} className="voice-text-input-icon" />
             <input
               type="text"
               className="voice-text-input"
               placeholder={
                 state === 'listening'
-                  ? (userTranscript ? `Hearing: "${userTranscript}"` : 'Listening... speak now (or type here)')
-                  : 'Type a message or tap TALK...'
+                  ? (userTranscript ? `Hearing: "${userTranscript}"` : 'Listening... speak now')
+                  : state === 'thinking'
+                  ? 'Chaos Talk is thinking...'
+                  : 'Ask Chaos Talk or type here...'
               }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               disabled={state === 'thinking'}
             />
           </div>
 
-          <button
-            type="submit"
-            className="voice-send-btn"
-            disabled={!inputText.trim() || state === 'thinking'}
-            title="Send text message (Enter)"
-          >
-            <SendHorizontal size={14} />
-          </button>
+          {/* Action Cluster: Mic / Live Button + Send Button */}
+          <div className="voice-action-group">
+            <button
+              type="button"
+              className={`voice-mic-pill-btn ${state === 'listening' ? 'is-listening' : ''}`}
+              onClick={toggleInteraction}
+              title={state === 'listening' ? 'Listening... click to send voice' : 'Use microphone / Talk'}
+            >
+              {state === 'listening' ? (
+                <>
+                  <div className="voice-live-equalizer" aria-hidden="true">
+                    <span
+                      className="equalizer-bar bar-1"
+                      style={{ transform: `scaleY(${Math.max(0.4, 0.4 + audioLevel * 1.8)})` }}
+                    />
+                    <span
+                      className="equalizer-bar bar-2"
+                      style={{ transform: `scaleY(${Math.max(0.7, 0.6 + audioLevel * 2.2)})` }}
+                    />
+                    <span
+                      className="equalizer-bar bar-3"
+                      style={{ transform: `scaleY(${Math.max(0.9, 0.7 + audioLevel * 2.5)})` }}
+                    />
+                    <span
+                      className="equalizer-bar bar-4"
+                      style={{ transform: `scaleY(${Math.max(0.5, 0.5 + audioLevel * 1.8)})` }}
+                    />
+                  </div>
+                  <span className="voice-live-tag">LIVE</span>
+                </>
+              ) : (
+                <Mic size={18} />
+              )}
+            </button>
+
+            <button
+              type="submit"
+              className={`voice-send-btn ${inputText.trim() ? 'is-active' : ''}`}
+              disabled={!inputText.trim() || state === 'thinking'}
+              title="Send message (Enter)"
+            >
+              <SendHorizontal size={17} />
+            </button>
+          </div>
         </form>
       </footer>
     </div>

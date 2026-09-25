@@ -234,9 +234,9 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
     ctxMap.set(container, { renderer, program, mesh });
 
     const setSize = () => {
-      const rect = container.getBoundingClientRect();
-      const w = Math.max(1, Math.floor(rect.width));
-      const h = Math.max(1, Math.floor(rect.height));
+      if (!container || !renderer) return;
+      const w = Math.max(container.clientWidth || window.innerWidth, 1);
+      const h = Math.max(container.clientHeight || window.innerHeight, 1);
       renderer.setSize(w, h);
       const res = program.uniforms.iResolution.value as Float32Array;
       res[0] = gl.drawingBufferWidth;
@@ -246,6 +246,7 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
 
     const ro = new ResizeObserver(setSize);
     ro.observe(container);
+    window.addEventListener('resize', setSize);
     setSize();
 
     const targetMouse: [number, number] = [0.5, 0.5];
@@ -261,12 +262,10 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
       targetMouse[0] = 0.5;
       targetMouse[1] = 0.5;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     document.addEventListener('mouseleave', handleMouseLeave);
 
     let raf = 0;
-    let isVisible = true;
-    let isPageVisible = !document.hidden;
     const t0 = performance.now();
 
     const loop = (t: number) => {
@@ -281,7 +280,9 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
     };
 
     const tryStart = () => {
-      if (isVisible && isPageVisible && raf === 0) raf = requestAnimationFrame(loop);
+      if (!document.hidden && raf === 0) {
+        raf = requestAnimationFrame(loop);
+      }
     };
     const tryStop = () => {
       if (raf !== 0) {
@@ -290,18 +291,8 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
       }
     };
 
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = entry.isIntersecting;
-        isVisible ? tryStart() : tryStop();
-      },
-      { threshold: 0 }
-    );
-    io.observe(container);
-
     const onVisibility = () => {
-      isPageVisible = !document.hidden;
-      isPageVisible ? tryStart() : tryStop();
+      document.hidden ? tryStop() : tryStart();
     };
     document.addEventListener('visibilitychange', onVisibility);
 
@@ -310,7 +301,7 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
     return () => {
       tryStop();
       ro.disconnect();
-      io.disconnect();
+      window.removeEventListener('resize', setSize);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);

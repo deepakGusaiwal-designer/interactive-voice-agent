@@ -9,6 +9,7 @@
   max-width: 100vw;
   height: 100vh;
   height: 100dvh;
+  background: radial-gradient(circle at 50% 45%, #080c16 0%, #030509 60%, #000000 100%);
   background-color: #000000;
   overflow: hidden;
   display: flex;
@@ -25,7 +26,7 @@
   height: 100%;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.20;
+  opacity: 0.75;
   transition: opacity 800ms ease;
   overflow: hidden;
 }
@@ -78,6 +79,30 @@
 .voice-chaos-ambient.is-error {
   opacity: 0.12;
   background: radial-gradient(circle, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.06) 60%, transparent 80%);
+}
+
+/* =========================================================
+   CHATGPT ASTRA / PROJECT ASTRA BOTTOM PARTICLE FLOW FIELD
+   ========================================================= */
+.astra-bottom-particle-flow {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 48%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.9) 35%, rgba(0, 0, 0, 0.3) 75%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.9) 35%, rgba(0, 0, 0, 0.3) 75%, transparent 100%);
+}
+
+.astra-react-bits-particles,
+.astra-particle-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* =========================================================
@@ -1050,7 +1075,7 @@
 
 .lang-item-name {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   color: #f1f5f9;
 }
@@ -1129,136 +1154,399 @@
 }
 
 /* =========================================================
-   FLOATING BOTTOM INPUT DOCK (Dual Voice & Text)
+   FLOATING BOTTOM INPUT DOCK (Apple Liquid Glass Dual Input)
    ========================================================= */
 .voice-chaos-bottom-bar {
   position: absolute;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 90%;
-  max-width: 580px;
+  width: 92%;
+  max-width: 660px;
   z-index: 20;
 }
 
+/* =========================================================
+   ULTRA-BLURRY SHINY LIQUID GLASS DOCK
+   ========================================================= */
+
+/* Main Pill Dock Container (Pure Frosted Liquid Glass) */
 .voice-input-dock {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(6, 6, 9, 0.92);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.95);
-  border-radius: 999px;
-  padding: 5px 6px 5px 6px;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  gap: 12px;
+  min-height: 62px;
+  height: 62px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 8px 12px 8px 18px;
+  background: rgba(12, 14, 24, 0.42);
+  backdrop-filter: blur(52px) saturate(240%) brightness(112%);
+  -webkit-backdrop-filter: blur(52px) saturate(240%) brightness(112%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 0;
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 0 24px 0 rgba(56, 189, 248, 0.12),
+    inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.5),
+    0 20px 50px -8px rgba(0, 0, 0, 0.9),
+    0 0 28px -4px rgba(56, 189, 248, 0.18);
+  transition: all 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1;
+}
+
+.voice-input-dock:hover {
+  transform: translateY(-1px);
+  background: rgba(16, 18, 30, 0.52);
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.6),
+    0 24px 60px -8px rgba(0, 0, 0, 0.95),
+    0 0 36px -2px rgba(56, 189, 248, 0.28);
 }
 
 .voice-input-dock:focus-within {
-  border-color: rgba(139, 92, 246, 0.35);
-  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.98), 0 0 24px rgba(139, 92, 246, 0.12);
+  transform: translateY(-1px);
+  background: rgba(18, 22, 36, 0.58);
+  border-color: rgba(56, 189, 248, 0.65);
+  border-top-color: #ffffff;
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 #ffffff,
+    inset 0 0 28px 0 rgba(56, 189, 248, 0.25),
+    0 24px 60px -8px rgba(0, 0, 0, 0.95),
+    0 0 44px 0 rgba(56, 189, 248, 0.4);
 }
 
-.voice-mic-pill-btn {
+
+/* Layer 2: Brilliant Travelling Laser Shimmer Flare */
+.voice-dock-shimmer-sweep {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    108deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.04) 43%,
+    rgba(255, 255, 255, 0.25) 49%,
+    rgba(56, 189, 248, 0.32) 51%,
+    rgba(255, 255, 255, 0.25) 53%,
+    transparent 58%
+  );
+  animation: dockShimmerSweep 5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes dockShimmerSweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  48% {
+    transform: translateX(100%);
+    opacity: 1;
+  }
+  52%, 100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Layer 3: Top Edge Razor-Sharp Prismatic Light Reflection */
+.voice-dock-top-flare {
+  position: absolute;
+  top: 1px;
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(56, 189, 248, 0.6) 25%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(129, 140, 248, 0.6) 75%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Left Star Sparkle Pill */
+.voice-sparkle-pill {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 15px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f1f5f9;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 180ms ease;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  user-select: none;
+  z-index: 2;
 }
 
-.voice-mic-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
+.voice-sparkle-svg {
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+  animation: sparkleBreathe 3.5s infinite ease-in-out;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), filter 260ms ease;
 }
 
-.voice-mic-pill-btn.is-listening {
-  background: rgba(16, 185, 129, 0.25);
-  border-color: rgba(16, 185, 129, 0.7);
-  color: #6ee7b7;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+@keyframes sparkleBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.85));
+  }
 }
 
-.mic-wave-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-  animation: micPulse 1.2s infinite ease-in-out;
+.voice-input-dock:hover .voice-sparkle-svg,
+.voice-input-dock:focus-within .voice-sparkle-svg {
+  transform: scale(1.12) rotate(4deg);
+  filter: drop-shadow(0 0 14px rgba(56, 189, 248, 1));
 }
 
-@keyframes micPulse {
-  0%, 100% { transform: scale(0.9); opacity: 0.7; }
-  50% { transform: scale(1.4); opacity: 1; }
-}
-
+/* Text Input Wrapper */
 .voice-text-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  position: relative;
   min-width: 0;
-}
-
-.voice-text-input-icon {
-  color: rgba(226, 232, 240, 0.4);
-  margin-left: 6px;
-  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .voice-text-input {
-  flex: 1;
+  width: 100%;
+  height: 46px;
   background: transparent;
   border: none;
   outline: none;
-  color: #f8fafc;
-  font-size: 13.5px;
+  color: #ffffff;
   font-family: inherit;
-  padding: 6px 10px;
-  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 0;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .voice-text-input::placeholder {
-  color: rgba(226, 232, 240, 0.38);
-  font-size: 12.5px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 14.5px;
+  font-weight: 400;
 }
 
+/* Action Button Cluster (Right) */
+.voice-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Frosted Crystal Mic Button */
+.voice-mic-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(56, 189, 248, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.voice-mic-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  transform: scale(1.06);
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 #ffffff,
+    0 6px 20px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+/* Frosted Active Listening State */
+.voice-mic-pill-btn.is-listening {
+  width: auto;
+  padding: 0 18px;
+  gap: 10px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.5) 0%, rgba(99, 102, 241, 0.4) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.7);
+  border-top: 1.5px solid #ffffff;
+  color: #ffffff;
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 #ffffff,
+    0 0 24px rgba(14, 165, 233, 0.6),
+    0 0 36px rgba(99, 102, 241, 0.35);
+  animation: micGlassPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes micGlassPulse {
+  0%, 100% {
+    box-shadow: 
+      inset 0 1.5px 1.5px 0 #ffffff,
+      0 0 20px rgba(14, 165, 233, 0.5),
+      0 0 32px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 
+      inset 0 1.5px 1.5px 0 #ffffff,
+      0 0 30px rgba(14, 165, 233, 0.8),
+      0 0 44px rgba(99, 102, 241, 0.5);
+  }
+}
+
+/* Dancing Audio Equalizer */
+.voice-live-equalizer {
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  height: 20px;
+}
+
+.equalizer-bar {
+  display: inline-block;
+  width: 3.5px;
+  height: 18px;
+  border-radius: 999px;
+  transform-origin: bottom center;
+  transition: transform 80ms ease;
+}
+
+.equalizer-bar.bar-1 {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  animation: eqBounce1 0.8s infinite ease-in-out;
+}
+
+.equalizer-bar.bar-2 {
+  background: #ffffff;
+  box-shadow: 0 0 6px #ffffff;
+  animation: eqBounce2 0.8s infinite ease-in-out 0.15s;
+}
+
+.equalizer-bar.bar-3 {
+  background: #818cf8;
+  box-shadow: 0 0 6px #818cf8;
+  animation: eqBounce3 0.8s infinite ease-in-out 0.3s;
+}
+
+.equalizer-bar.bar-4 {
+  background: #67e8f9;
+  box-shadow: 0 0 6px #67e8f9;
+  animation: eqBounce4 0.8s infinite ease-in-out 0.45s;
+}
+
+@keyframes eqBounce1 {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(0.85); }
+}
+
+@keyframes eqBounce2 {
+  0%, 100% { transform: scaleY(0.7); }
+  50% { transform: scaleY(1.0); }
+}
+
+@keyframes eqBounce3 {
+  0%, 100% { transform: scaleY(0.9); }
+  50% { transform: scaleY(0.5); }
+}
+
+@keyframes eqBounce4 {
+  0%, 100% { transform: scaleY(0.5); }
+  50% { transform: scaleY(0.9); }
+}
+
+.voice-live-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-family: inherit;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Glossy Liquid Send Button */
 .voice-send-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 180ms ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.28);
+  cursor: not-allowed;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
-.voice-send-btn:hover:not(:disabled) {
+.voice-send-btn.is-active,
+.voice-send-btn:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #6366f1 100%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-top: 1.5px solid #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 #ffffff,
+    0 4px 18px rgba(14, 165, 233, 0.6),
+    0 0 20px rgba(99, 102, 241, 0.35);
+  animation: sendBtnPopIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sendBtnPopIn {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.voice-send-btn.is-active:hover,
+.voice-send-btn:not(:disabled):hover {
   transform: scale(1.08);
-  box-shadow: 0 0 14px rgba(6, 182, 212, 0.5);
+  box-shadow: 
+    inset 0 1.5px 1.5px 0 #ffffff,
+    0 6px 24px rgba(14, 165, 233, 0.8),
+    0 0 28px rgba(99, 102, 241, 0.5);
+}
+
+.voice-send-btn.is-active:active,
+.voice-send-btn:not(:disabled):active {
+  transform: scale(0.96);
 }
 
 .voice-send-btn:disabled {
-  opacity: 0.22;
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  opacity: 0.35;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
 }
 
 /* =========================================================
