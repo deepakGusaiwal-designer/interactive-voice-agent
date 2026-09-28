@@ -48,7 +48,15 @@ export class SpeechSynthesisService {
   }
 
   public async speak(text: string, options: SpeakOptions = {}): Promise<void> {
-    this.cancel()
+    // Only cancel if actually speaking to prevent iOS Safari cancel collision
+    if (this.isSpeaking || (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking)) {
+      this.cancel()
+    }
+
+    // Ensure speech synthesis is not in paused state (common iOS WebKit issue)
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume()
+    }
 
     // If Studio HD mode is explicitly requested, generate 24kHz HD PCM via server proxy
     if (options.mode === 'studio') {
@@ -148,7 +156,7 @@ export class SpeechSynthesisService {
   }
 
   /**
-   * Browser SpeechSynthesis Fallback with strict anti-robot filtering
+   * Browser SpeechSynthesis Fallback with strict anti-robot filtering & iOS compatibility
    */
   private speakBrowser(text: string, options: SpeakOptions = {}): void {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -156,8 +164,13 @@ export class SpeechSynthesisService {
       return
     }
 
+    // On iOS Safari, resume before every speak to unfreeze paused synthesis
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume()
+    }
+
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = options.rate ?? 1.05
+    utterance.rate = options.rate ?? 1.02
     utterance.pitch = options.pitch ?? 1.0
     utterance.volume = options.volume ?? 1.0
 
@@ -173,12 +186,13 @@ export class SpeechSynthesisService {
     const naturalVoices = matchingVoices.filter((v) => !/Desktop|David|Hazel|Zira|Mark|George/i.test(v.name))
     const pool = naturalVoices.length > 0 ? naturalVoices : matchingVoices
 
+    // Include top iOS Apple / Siri / Lekha / Neel voices
     const preferredVoice =
       pool.find((v) => /^Google\s/i.test(v.name)) ||
       pool.find((v) => /Online \(Natural\)/i.test(v.name)) ||
       pool.find((v) => /Natural|Enhanced/i.test(v.name)) ||
       pool.find((v) =>
-        /Samantha|Daniel|Karen|Paulina|Helena|Jorge|Thomas|Amelie|Katja|Kalpana|Hemant/i.test(v.name),
+        /Siri|Samantha|Daniel|Karen|Lekha|Neel|Arthur|Nora|Paulina|Helena|Jorge|Thomas|Amelie|Katja|Kalpana|Hemant/i.test(v.name),
       ) ||
       pool[0] ||
       voices[0]
@@ -186,6 +200,9 @@ export class SpeechSynthesisService {
     if (preferredVoice) {
       utterance.voice = preferredVoice
     }
+
+    // iOS WebKit GC Bug Fix: retain global reference so utterance is not garbage collected mid-speech
+    ;(window as unknown as { __activeVoiceChaosUtterance?: SpeechSynthesisUtterance | null }).__activeVoiceChaosUtterance = utterance
 
     utterance.onstart = () => {
       this.isSpeaking = true
@@ -195,6 +212,7 @@ export class SpeechSynthesisService {
     utterance.onend = () => {
       this.isSpeaking = false
       this.currentUtterance = null
+      ;(window as unknown as { __activeVoiceChaosUtterance?: SpeechSynthesisUtterance | null }).__activeVoiceChaosUtterance = null
       options.onEnd?.()
     }
 
@@ -204,6 +222,7 @@ export class SpeechSynthesisService {
       }
       this.isSpeaking = false
       this.currentUtterance = null
+      ;(window as unknown as { __activeVoiceChaosUtterance?: SpeechSynthesisUtterance | null }).__activeVoiceChaosUtterance = null
     }
 
     utterance.onboundary = (e) => {

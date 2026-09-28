@@ -98,6 +98,7 @@ export class SpeechRecognitionService {
   private maxListeningTimer: ReturnType<typeof setTimeout> | null = null
   private targetLanguage: string = getDefaultRecognitionLanguage()
   private autoRestartAllowed: boolean = false
+  private hasSubmittedThisSession: boolean = false
 
   constructor() {
     this.initRecognition()
@@ -147,6 +148,11 @@ export class SpeechRecognitionService {
     }
 
     rec.onresult = (event) => {
+      // If already submitted this session or stopped listening, ignore trailing WebKit buffer events
+      if (this.hasSubmittedThisSession || !this.isListening) {
+        return
+      }
+
       let finalChunk = ''
       let interimChunk = ''
 
@@ -174,7 +180,7 @@ export class SpeechRecognitionService {
         // Smart conversational pause detection: 1.4s of silence after uttering words submits automatically
         this.clearSilenceTimer()
         this.silenceTimer = setTimeout(() => {
-          if (this.isListening && (this.accumulatedFinalText || this.currentInterimText)) {
+          if (this.isListening && !this.hasSubmittedThisSession && (this.accumulatedFinalText || this.currentInterimText)) {
             this.finishAndSubmit()
           }
         }, 1400)
@@ -184,6 +190,19 @@ export class SpeechRecognitionService {
     }
 
     rec.onend = () => {
+      // If this session has already been submitted (e.g. via finishAndSubmit or silence timeout),
+      // ignore onend completely and clean up state to prevent mobile double response
+      if (this.hasSubmittedThisSession) {
+        this.isListening = false
+        this.isUserSpeaking = false
+        this.clearSilenceTimer()
+        this.clearMaxListeningTimer()
+        this.accumulatedFinalText = ''
+        this.currentInterimText = ''
+        this.callbacks.onEnd?.()
+        return
+      }
+
       // If we are supposed to be listening (e.g. Chrome fired an idle timeout without speech),
       // auto-restart unless explicitly stopped or user submitted
       if (this.isListening && this.autoRestartAllowed) {
@@ -202,6 +221,7 @@ export class SpeechRecognitionService {
         }
       }
 
+      this.hasSubmittedThisSession = true
       this.isListening = false
       this.isUserSpeaking = false
       this.clearSilenceTimer()
@@ -264,6 +284,10 @@ export class SpeechRecognitionService {
   }
 
   public finishAndSubmit(): void {
+    if (this.hasSubmittedThisSession) {
+      return
+    }
+    this.hasSubmittedThisSession = true
     this.clearSilenceTimer()
     this.clearMaxListeningTimer()
     this.autoRestartAllowed = false
@@ -284,6 +308,7 @@ export class SpeechRecognitionService {
     this.callbacks = callbacks
     this.accumulatedFinalText = ''
     this.currentInterimText = ''
+    this.hasSubmittedThisSession = false
     this.autoRestartAllowed = true
     this.isListening = true
 
@@ -308,7 +333,16 @@ export class SpeechRecognitionService {
     }
 
     if (!this.recognition) {
-      callbacks.onError?.('Speech recognition is not available in this browser. Try Chrome or Edge.')
+      const isApple = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+      const isAppleNonSafari = isApple && /CriOS|FxiOS|EdgiOS|Instagram|FBAN|FBAV|Line/i.test(navigator.userAgent)
+      
+      if (isAppleNonSafari) {
+        callbacks.onError?.('On iPhone/iPad, voice recognition requires Apple Safari. Please tap Share and choose "Open in Safari".')
+      } else if (isApple) {
+        callbacks.onError?.('Speech recognition is not available. Please ensure Safari has microphone access in iOS Settings.')
+      } else {
+        callbacks.onError?.('Speech recognition is not available in this browser. Try Chrome, Edge, or Safari.')
+      }
       return
     }
 
@@ -333,6 +367,7 @@ export class SpeechRecognitionService {
   }
 
   public abort(): void {
+    this.hasSubmittedThisSession = true
     this.autoRestartAllowed = false
     this.isListening = false
     this.clearSilenceTimer()

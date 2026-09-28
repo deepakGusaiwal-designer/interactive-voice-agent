@@ -262,8 +262,23 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
       targetMouse[0] = 0.5;
       targetMouse[1] = 0.5;
     };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        targetMouse[0] = (touch.clientX - rect.left) / rect.width;
+        targetMouse[1] = 1.0 - (touch.clientY - rect.top) / rect.height;
+      }
+    };
+    const handleTouchEnd = () => {
+      targetMouse[0] = 0.5;
+      targetMouse[1] = 0.5;
+    };
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     document.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     let raf = 0;
     const t0 = performance.now();
@@ -305,6 +320,8 @@ const MoltenMetal: React.FC<MoltenMetalProps> = ({
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
       ctxMap.delete(container);
       if (canvas.parentNode === container) container.removeChild(canvas);
       gl.getExtension('WEBGL_lose_context')?.loseContext();

@@ -18,6 +18,8 @@ import {
   RotateCcw,
   ChevronDown,
   Check,
+  Volume2,
+  AlertCircle,
 } from 'lucide-react'
 import { VoiceStrands } from './VoiceStrands'
 import { VoiceTranscript } from './VoiceTranscript'
@@ -26,6 +28,7 @@ import { ChaosTalkLogo } from './ChaosTalkLogo'
 import MoltenMetal from './react-bits/MoltenMetal'
 import { useVoiceAgent } from '../hooks/useVoiceAgent'
 import { getLanguageLabel } from '../ai/personality'
+import { isIOS, isIOSNonSafari } from '../audio/iosAudioUnlock'
 
 export const VoiceExperience: React.FC = () => {
   const {
@@ -123,13 +126,22 @@ export const VoiceExperience: React.FC = () => {
 
   const handleTextSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (!inputText.trim()) return
-    sendTextMessage(inputText)
+    const clean = inputText.trim()
+    if (!clean) return
     setInputText('')
+    sendTextMessage(clean)
   }
 
   return (
-    <div className="voice-chaos-viewport">
+    <div className={`voice-chaos-viewport ${isIOSNonSafari() ? 'has-ios-banner' : ''} ${isInputFocused ? 'is-input-focused' : ''}`}>
+      {/* iOS Non-Safari In-App Browser Guidance Banner */}
+      {isIOSNonSafari() && (
+        <aside className="ios-safari-warning-banner" role="alert">
+          <AlertCircle size={13} className="ios-banner-icon" />
+          <span>On iPhone/iPad, please open in <strong>Safari</strong> for microphone voice talk.</span>
+        </aside>
+      )}
+
       {/* Dynamic Molten Metal Atmospheric Background - Subtle Stealth Liquid Chrome */}
       <div className="voice-chaos-molten-bg" aria-hidden="true">
         <MoltenMetal
@@ -156,9 +168,9 @@ export const VoiceExperience: React.FC = () => {
       <div className={`voice-chaos-ambient is-${state} ${hasChat ? 'has-chat' : 'is-empty'}`} />
 
       {/* Main Screen: Cleanly separated Visualizer Zone & Chat Zone (No Overlap) */}
-      <main className={`voice-chaos-stage ${hasChat ? 'has-chat' : 'is-empty'}`}>
+      <main className={`voice-chaos-stage ${hasChat ? 'has-chat' : 'is-empty'} ${isInputFocused ? 'is-input-focused' : ''}`}>
         {/* UPPER/CENTER ZONE: Dedicated Strands Visualizer Canvas */}
-        <section className={`voice-visualizer-zone ${hasChat ? 'has-chat' : 'is-empty'}`}>
+        <section className={`voice-visualizer-zone ${hasChat ? 'has-chat' : 'is-empty'} ${isInputFocused ? 'is-input-focused' : ''}`}>
           <div className="voice-visualizer-canvas-container">
             <VoiceStrands
               state={state}
@@ -363,6 +375,18 @@ export const VoiceExperience: React.FC = () => {
                   </div>
                   {voiceMode === 'studio' && <Check size={13} className="lang-item-check" />}
                 </button>
+
+                {isIOS() && (
+                  <>
+                    <div className="lang-dropdown-divider" />
+                    <div className="ios-sound-tip-box">
+                      <Volume2 size={13} className="ios-tip-icon" />
+                      <div className="ios-tip-text">
+                        <strong>iPhone Sound:</strong> Turn <u>OFF</u> the physical Silent switch on the side of your phone &amp; turn volume up.
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

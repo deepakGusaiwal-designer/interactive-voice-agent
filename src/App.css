@@ -129,9 +129,19 @@
 }
 
 .voice-chaos-stage.has-chat {
-  padding-top: 56px; /* Clears top header */
-  padding-bottom: 84px; /* Leaves clear space for floating bottom input dock */
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   justify-content: flex-start;
+}
+
+.has-ios-banner .voice-chaos-stage.has-chat {
+  padding-top: calc(88px + env(safe-area-inset-top, 0px));
+}
+
+.voice-visualizer-zone.has-chat.is-input-focused {
+  flex: 0 0 100px;
+  height: 100px;
+  max-height: 110px;
 }
 
 /* =========================================================
@@ -372,6 +382,8 @@
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 /* Apple Sleek Pill Scrollbar */
@@ -611,6 +623,10 @@
   font-weight: 500;
   color: #f8fafc;
   letter-spacing: -0.01em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .voice-transcript-line.is-user .transcript-content {
@@ -673,9 +689,9 @@
    ========================================================= */
 .voice-chaos-topbar {
   position: absolute;
-  top: 12px;
-  left: 16px;
-  right: 16px;
+  top: max(12px, env(safe-area-inset-top, 12px));
+  left: max(14px, env(safe-area-inset-left, 14px));
+  right: max(14px, env(safe-area-inset-right, 14px));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -684,6 +700,10 @@
   transition: opacity 220ms ease;
   pointer-events: auto;
   gap: 8px;
+}
+
+.has-ios-banner .voice-chaos-topbar {
+  top: calc(36px + max(10px, env(safe-area-inset-top, 10px)));
 }
 
 .topbar-left-group {
@@ -1158,7 +1178,7 @@
    ========================================================= */
 .voice-chaos-bottom-bar {
   position: absolute;
-  bottom: 24px;
+  bottom: max(20px, calc(12px + env(safe-area-inset-bottom, 0px)));
   left: 50%;
   transform: translateX(-50%);
   width: 92%;
@@ -1333,17 +1353,18 @@
   outline: none;
   color: #ffffff;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px; /* 16px minimum prevents iOS Safari auto-zoom on focus */
   font-weight: 500;
   line-height: 1.5;
   padding: 0;
   letter-spacing: -0.01em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .voice-text-input::placeholder {
   color: rgba(226, 232, 240, 0.55);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 400;
 }
 
@@ -1567,7 +1588,6 @@
   transition: opacity 300ms ease;
 }
 
-/* Mobile Optimizations */
 /* Mobile & Responsive Optimizations */
 @media (max-width: 768px) {
   .voice-chaos-ambient {
@@ -1575,10 +1595,42 @@
     height: 90vw;
   }
 
+  .voice-chaos-topbar {
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: max(10px, env(safe-area-inset-left, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+  }
+
+  .has-ios-banner .voice-chaos-topbar {
+    top: calc(34px + max(6px, env(safe-area-inset-top, 0px)));
+  }
+
+  .voice-chaos-bottom-bar {
+    bottom: max(14px, calc(8px + env(safe-area-inset-bottom, 0px)));
+    width: calc(100% - 24px);
+    max-width: 580px;
+  }
+
+  .voice-chaos-stage.has-chat {
+    padding-top: calc(52px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .has-ios-banner .voice-chaos-stage.has-chat {
+    padding-top: calc(84px + env(safe-area-inset-top, 0px));
+  }
+
   .voice-visualizer-zone.has-chat {
-    flex: 0 0 20vh;
+    flex: 0 0 160px;
+    height: 160px;
     min-height: 0;
-    max-height: 160px;
+    max-height: 180px;
+  }
+
+  .voice-visualizer-zone.has-chat.is-input-focused {
+    flex: 0 0 88px;
+    height: 88px;
+    max-height: 88px;
   }
 
   .voice-visualizer-zone.is-empty {
@@ -1597,93 +1649,110 @@
   }
 
   .voice-lang-dropdown-btn {
-    padding: 3.5px 7px;
+    padding: 5px 8px;
     font-size: 10px;
     gap: 4px;
+    min-height: 30px;
   }
 
   .voice-mode-toggle-btn {
-    padding: 3.5px 7px;
+    padding: 5px 8px;
     font-size: 10px;
     gap: 4px;
+    min-height: 30px;
   }
 
   .voice-reset-topbar-btn {
-    padding: 3.5px 7px;
+    padding: 5px 8px;
     font-size: 10px;
+    min-height: 30px;
   }
 
   .voice-lang-dropdown-menu {
-    width: 240px;
+    width: 250px;
+    max-width: calc(100vw - 20px);
     right: 0;
   }
 
   .voice-transcript-line {
-    padding: 8px 12px;
-    border-radius: 12px;
+    padding: 10px 14px;
+    border-radius: 16px;
+  }
+
+  .voice-transcript-line.is-user {
+    max-width: 88%;
+  }
+
+  .voice-transcript-line.is-ai {
+    max-width: 90%;
   }
 
   .transcript-content {
-    font-size: 13px;
+    font-size: 13.5px;
+    line-height: 1.5;
   }
 
   .voice-state-container {
-    padding: 3px 10px;
+    padding: 4px 12px;
+    max-width: 90vw;
   }
 
   .voice-state-text {
-    font-size: 9.5px;
+    font-size: 10px;
   }
 
-  .voice-chaos-topbar {
-    top: 8px;
-    left: 8px;
-    right: 8px;
+  .apple-modal-card {
+    padding: 18px 16px;
+    border-radius: 20px;
+    margin: 12px;
   }
 
-  .voice-chaos-bottom-bar {
-    bottom: 10px;
-    width: 95%;
-  }
-
-  .voice-chaos-stage {
-    padding-top: 50px;
-    padding-bottom: 74px;
+  .apple-modal-input {
+    font-size: 16px; /* Prevents auto-zoom on mobile */
   }
 }
 
 /* Extra Compact Mobile Phones (<= 480px) */
 @media (max-width: 480px) {
   .voice-chaos-topbar {
-    top: 6px;
-    left: 6px;
-    right: 6px;
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    gap: 4px;
+  }
+
+  .has-ios-banner .voice-chaos-topbar {
+    top: calc(34px + max(4px, env(safe-area-inset-top, 0px)));
   }
 
   .chaos-talk-logo-wrap.size-sm .chaos-talk-brand-text {
-    font-size: 10px;
+    font-size: 10.5px;
     letter-spacing: 0.08em;
   }
 
   .chaos-talk-header-badge {
-    padding: 3px 6px 3px 4px;
+    padding: 3px 7px 3px 5px;
+    min-height: 28px;
   }
 
   .voice-lang-dropdown-btn {
-    padding: 3px 6px;
+    padding: 4px 7px;
     font-size: 9.5px;
     gap: 3px;
+    min-height: 28px;
   }
 
   .voice-mode-toggle-btn {
-    padding: 3px 6px;
+    padding: 4px 7px;
     font-size: 9.5px;
     gap: 3px;
+    min-height: 28px;
   }
 
   .voice-reset-topbar-btn {
-    padding: 3px 6px;
+    padding: 4px 7px;
     font-size: 9.5px;
+    min-height: 28px;
   }
 
   .voice-reset-topbar-btn span {
@@ -1691,9 +1760,39 @@
   }
 
   .voice-lang-dropdown-menu {
-    width: 220px;
+    width: 235px;
+    max-width: calc(100vw - 16px);
     right: 0;
     font-size: 11px;
+  }
+
+  .voice-input-dock {
+    min-height: 56px;
+    height: 56px;
+    padding: 6px 8px 6px 12px;
+    gap: 8px;
+  }
+
+  .voice-mic-pill-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .voice-send-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .voice-sparkle-pill {
+    display: none; /* More horizontal room for typing input on narrow phone */
+  }
+
+  .voice-transcript-line.is-user {
+    max-width: 92%;
+  }
+
+  .voice-transcript-line.is-ai {
+    max-width: 94%;
   }
 }
 
@@ -1867,4 +1966,67 @@
 
 .key-icon {
   color: #38bdf8;
+}
+
+/* =========================================================
+   iOS Specific Audio & Safari Compatibility Styles
+   ========================================================= */
+.ios-safari-warning-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(90deg, rgba(234, 88, 12, 0.22), rgba(245, 158, 11, 0.22));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fef08a;
+  text-align: center;
+  position: relative;
+  z-index: 90;
+  animation: slideDownBanner 250ms ease-out;
+}
+
+@keyframes slideDownBanner {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ios-banner-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.ios-sound-tip-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 4px 2px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ios-tip-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ios-tip-text strong {
+  color: #fbbf24;
+  font-weight: 700;
 }

@@ -70,15 +70,23 @@ export const VoiceTranscript: React.FC<VoiceTranscriptProps> = ({
   }
 
   const scrollToBottom = () => {
-    bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
     setAutoScroll(true)
     setShowScrollBottomBtn(false)
   }
 
   // Auto-scroll when new messages arrive or state updates if autoScroll is enabled
   useEffect(() => {
-    if (autoScroll && bottomAnchorRef.current) {
-      bottomAnchorRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (autoScroll && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
     }
   }, [chatHistory, userTranscript, aiTranscript, state, autoScroll])
 

@@ -295,10 +295,12 @@ export default function Strands({
     const ctn = ctnDom.current;
     if (!ctn) return;
 
+    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2);
     const renderer = new Renderer({
       alpha: true,
       premultipliedAlpha: true,
-      antialias: true
+      antialias: true,
+      dpr
     });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
@@ -311,12 +313,15 @@ export default function Strands({
       delete (geometry.attributes as Record<string, unknown>).uv;
     }
 
+    const initialW = gl.drawingBufferWidth || (ctn.offsetWidth || window.innerWidth) * dpr;
+    const initialH = gl.drawingBufferHeight || (ctn.offsetHeight || window.innerHeight) * dpr;
+
     const program = new Program(gl, {
       vertex: VERT,
       fragment: FRAG,
       uniforms: {
         uTime: { value: 0 },
-        uResolution: { value: [ctn.offsetWidth || window.innerWidth, ctn.offsetHeight || window.innerHeight] },
+        uResolution: { value: [initialW, initialH] },
         uColors: { value: buildPalette(propsRef.current.colors) },
         uColorCount: { value: Math.min(propsRef.current.colors.length, MAX_COLORS) },
         uStrandCount: { value: Math.min(propsRef.current.count, MAX_STRANDS) },
@@ -338,8 +343,8 @@ export default function Strands({
     const mesh = new Mesh(gl, { geometry, program });
 
     const renderTarget = new RenderTarget(gl, {
-      width: ctn.offsetWidth || window.innerWidth,
-      height: ctn.offsetHeight || window.innerHeight
+      width: initialW,
+      height: initialH
     });
 
     const glassProgram = new Program(gl, {
@@ -347,7 +352,7 @@ export default function Strands({
       fragment: GLASS_FRAG,
       uniforms: {
         uScene: { value: renderTarget.texture },
-        uResolution: { value: [ctn.offsetWidth || window.innerWidth, ctn.offsetHeight || window.innerHeight] },
+        uResolution: { value: [initialW, initialH] },
         uRadius: { value: 0.46 * glassSize },
         uRefraction: { value: refraction },
         uDispersion: { value: dispersion }
@@ -363,9 +368,11 @@ export default function Strands({
       const height = ctn.offsetHeight || window.innerHeight;
       if (width === 0 || height === 0) return;
       renderer.setSize(width, height);
-      program.uniforms.uResolution.value = [width, height];
-      renderTarget.setSize(width, height);
-      glassProgram.uniforms.uResolution.value = [width, height];
+      const drawW = gl.drawingBufferWidth;
+      const drawH = gl.drawingBufferHeight;
+      program.uniforms.uResolution.value = [drawW, drawH];
+      renderTarget.setSize(drawW, drawH);
+      glassProgram.uniforms.uResolution.value = [drawW, drawH];
     }
     window.addEventListener('resize', resize);
     resize();

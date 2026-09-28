@@ -33,6 +33,23 @@ export class AudioAnalyser {
     return this.context
   }
 
+  public async unlockAudio(): Promise<void> {
+    try {
+      const ctx = await this.getAudioContext()
+      if (ctx.state === 'suspended') {
+        await ctx.resume()
+      }
+      // Play 1-frame silent buffer to unlock iOS Safari Web Audio session
+      const buffer = ctx.createBuffer(1, 1, 22050)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(ctx.destination)
+      source.start(0)
+    } catch (e) {
+      // Ignored
+    }
+  }
+
   public async attachStream(stream: MediaStream): Promise<void> {
     const ctx = await this.getAudioContext()
 

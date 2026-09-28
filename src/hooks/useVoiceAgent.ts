@@ -16,6 +16,7 @@ import {
 } from '../voice/speechRecognition'
 import { globalSpeechSynthesis, SpeechSynthesisService } from '../voice/speechSynthesis'
 import { detectLanguage } from '../ai/personality'
+import { unlockIOSAudio, setupAutoAudioUnlock } from '../audio/iosAudioUnlock'
 import type { VoiceState } from '../components/VoiceState'
 
 export interface ChatMessage {
@@ -83,6 +84,10 @@ export function useVoiceAgent(
   const selectedLanguageRef = useRef<string>(selectedLanguage)
   selectedLanguageRef.current = selectedLanguage
 
+  // Concurrency & deduplication guards for mobile speech recognition double-firing
+  const isProcessingUtteranceRef = useRef<boolean>(false)
+  const lastSubmittedUtteranceRef = useRef<{ text: string; time: number }>({ text: '', time: 0 })
+
   const setLanguage = useCallback((lang: string) => {
     setSelectedLanguageState(lang)
     recognition.setLanguage(lang)
@@ -102,6 +107,11 @@ export function useVoiceAgent(
     }
   }, [])
 
+  // Setup automatic audio session unlock for iOS on mount
+  useEffect(() => {
+    setupAutoAudioUnlock()
+  }, [])
+
   // Process user speech/text through the AI Personality Engine and speak out
   const handleUserUtterance = useCallback(
     async (spokenText: string) => {
@@ -111,6 +121,24 @@ export function useVoiceAgent(
         audioManager.stopListening()
         return
       }
+
+      // Concurrency & Deduplication Guard:
+      // Drop identical utterances submitted within 2000ms window (common WebKit/mobile double-dispatch)
+      const now = Date.now()
+      if (
+        lastSubmittedUtteranceRef.current.text.toLowerCase() === clean.toLowerCase() &&
+        now - lastSubmittedUtteranceRef.current.time < 2000
+      ) {
+        return
+      }
+
+      // If already actively processing an utterance, avoid duplicate concurrent runs
+      if (isProcessingUtteranceRef.current) {
+        return
+      }
+
+      isProcessingUtteranceRef.current = true
+      lastSubmittedUtteranceRef.current = { text: clean, time: now }
 
       let activeLang = selectedLanguageRef.current
 
@@ -164,6 +192,11 @@ export function useVoiceAgent(
         setState('speaking')
         audioManager.setSpeaking(true, voiceModeRef.current === 'fast')
 
+        // Fallback safety timeout in case speech synthesis stalls or drops on iOS
+        const safetyTimer = setTimeout(() => {
+          isProcessingUtteranceRef.current = false
+        }, 15000)
+
         synthesis.speak(replyText, {
           lang: replyLang,
           mode: voiceModeRef.current,
@@ -172,15 +205,20 @@ export function useVoiceAgent(
             audioManager.setSpeaking(true, voiceModeRef.current === 'fast')
           },
           onEnd: () => {
+            clearTimeout(safetyTimer)
+            isProcessingUtteranceRef.current = false
             audioManager.setSpeaking(false)
             setState('idle')
           },
           onError: () => {
+            clearTimeout(safetyTimer)
+            isProcessingUtteranceRef.current = false
             audioManager.setSpeaking(false)
             setState('idle')
           },
         })
       } catch (err: unknown) {
+        isProcessingUtteranceRef.current = false
         audioManager.setSpeaking(false)
         setState('error')
         setErrorMessage('My cognitive pathways suffered a minor glitch. Tap to try again.')
@@ -193,12 +231,14 @@ export function useVoiceAgent(
   const startListeningSession = useCallback(async () => {
     setErrorMessage(undefined)
     setHasInteracted(true)
+    unlockIOSAudio()
 
     // If currently speaking, interrupt it immediately!
     if (synthesis.getSpeakingState()) {
       synthesis.cancel()
       audioManager.setSpeaking(false)
     }
+    isProcessingUtteranceRef.current = false
 
     try {
       await audioManager.startListening()
@@ -229,8 +269,10 @@ export function useVoiceAgent(
             audioManager.setSpeaking(false)
             setState('listening')
           }
+          isProcessingUtteranceRef.current = false
         },
         onError: (errMessage) => {
+          isProcessingUtteranceRef.current = false
           audioManager.stopListening()
           setState('error')
           setErrorMessage(errMessage)
@@ -243,6 +285,7 @@ export function useVoiceAgent(
         },
       })
     } catch (err: unknown) {
+      isProcessingUtteranceRef.current = false
       const errObj = err as Error
       setState('error')
       setErrorMessage(errObj.message || 'Your microphone is shy. Give it permission.')
@@ -251,6 +294,8 @@ export function useVoiceAgent(
 
   // Tap-to-Talk / Waveform Click handler
   const toggleInteraction = useCallback(() => {
+    unlockIOSAudio()
+
     // 1. If speaking: Interrupt and listen immediately
     if (state === 'speaking') {
       synthesis.cancel()
@@ -279,15 +324,19 @@ export function useVoiceAgent(
     const trimmed = text.trim()
     if (!trimmed) return
 
+    unlockIOSAudio()
     setHasInteracted(true)
     synthesis.cancel()
     audioManager.setSpeaking(false)
     recognition.stopListening()
+    isProcessingUtteranceRef.current = false
 
     handleUserUtterance(trimmed)
   }, [audioManager, handleUserUtterance, recognition, synthesis])
 
   const resetAgent = useCallback(() => {
+    isProcessingUtteranceRef.current = false
+    lastSubmittedUtteranceRef.current = { text: '', time: 0 }
     synthesis.cancel()
     recognition.abort()
     audioManager.stopListening()
@@ -307,6 +356,7 @@ export function useVoiceAgent(
   }, [])
 
   const stopAgent = useCallback(() => {
+    isProcessingUtteranceRef.current = false
     synthesis.cancel()
     recognition.abort()
     audioManager.stopListening()
