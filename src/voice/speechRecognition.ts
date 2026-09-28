@@ -177,13 +177,13 @@ export class SpeechRecognitionService {
           this.callbacks.onInterruptionDetected?.()
         }
 
-        // Smart conversational pause detection: 1.4s of silence after uttering words submits automatically
+        // Snappy conversational pause detection: 800ms of natural silence submits automatically
         this.clearSilenceTimer()
         this.silenceTimer = setTimeout(() => {
           if (this.isListening && !this.hasSubmittedThisSession && (this.accumulatedFinalText || this.currentInterimText)) {
             this.finishAndSubmit()
           }
-        }, 1400)
+        }, 800)
       }
 
       this.callbacks.onResult?.(combined, Boolean(finalChunk))

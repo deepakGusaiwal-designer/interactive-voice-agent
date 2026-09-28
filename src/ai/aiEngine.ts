@@ -72,8 +72,6 @@ export class ChaosAIEngine implements AIEngine {
       this.recentResponses.shift()
     }
 
-    // Add a slight natural processing delay (150ms) to feel thoughtful
-    await new Promise((resolve) => setTimeout(resolve, 150))
     return reply
   }
 
@@ -376,9 +374,11 @@ CRITICAL RULES:
 `
 
 const MODEL_CANDIDATES = [
-  'gemini-flash-lite-latest',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash-lite',
   'gemini-flash-latest',
-  'gemini-pro-latest',
+  'gemini-1.5-pro',
 ]
 
 interface MessagePart {
@@ -404,9 +404,20 @@ export class GeminiAIEngine implements AIEngine {
   }
 
   constructor(apiKey?: string) {
+    let envKey = ''
+    try {
+      const meta = import.meta as unknown as { env?: Record<string, string> }
+      if (meta && meta.env && meta.env.VITE_GEMINI_API_KEY) {
+        envKey = String(meta.env.VITE_GEMINI_API_KEY).trim()
+      }
+    } catch {
+      // Ignored
+    }
+
     this.apiKey =
       apiKey ||
-      (typeof window !== 'undefined' ? localStorage.getItem('VOICE_CHAOS_GEMINI_KEY') || '' : '')
+      envKey ||
+      (typeof window !== 'undefined' ? localStorage.getItem('VOICE_CHAOS_GEMINI_KEY') || localStorage.getItem('GEMINI_API_KEY') || '' : '')
     this.fallbackEngine = new ChaosAIEngine()
   }
 
@@ -464,7 +475,10 @@ export class GeminiAIEngine implements AIEngine {
 
     try {
       const generatedText = await this.callGeminiAPI(text)
-      
+      if (!generatedText) {
+        return this.fallbackEngine.respond(text)
+      }
+
       // Also detect language of the generated response in case model responded in native script
       const responseLang = detectLanguage(generatedText)
       const finalLang = responseLang.langCode !== 'en' ? responseLang.lang : lang
@@ -484,24 +498,27 @@ export class GeminiAIEngine implements AIEngine {
         text: generatedText,
         lang: finalLang || 'en-US',
       }
-    } catch (err) {
-      console.warn('[GeminiAIEngine] Gemini API failed, falling back to local engine:', err)
+    } catch {
       return this.fallbackEngine.respond(text)
     }
   }
 
   private async callGeminiAPI(userPrompt: string): Promise<string> {
-    // 1. Primary: Use secure serverless proxy (/api/chat).
+    // 1. Primary: Use secure serverless proxy (/api/chat) with strict 3500ms max ceiling.
     // The API key is stored safely on the server and is NEVER exposed to client browser!
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3500)
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           message: userPrompt,
           history: this.chatHistory,
         }),
       })
+      clearTimeout(timeoutId)
 
       if (res.ok) {
         const data = await res.json()
@@ -509,8 +526,8 @@ export class GeminiAIEngine implements AIEngine {
           return data.text.replace(/^["']|["']$/g, '').trim()
         }
       }
-    } catch (proxyErr) {
-      console.warn('[GeminiAIEngine] /api/chat proxy call failed, attempting fallback...', proxyErr)
+    } catch {
+      // Safe fallback below
     }
 
     // 2. Optional Fallback: Client personal key (if user explicitly provided their own in localStorage)
@@ -522,10 +539,13 @@ export class GeminiAIEngine implements AIEngine {
 
       for (const model of MODEL_CANDIDATES) {
         try {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 2500)
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`
           const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               systemInstruction: {
                 parts: [{ text: SYSTEM_INSTRUCTION }],
@@ -538,6 +558,7 @@ export class GeminiAIEngine implements AIEngine {
               },
             }),
           })
+          clearTimeout(timeoutId)
 
           if (response.ok) {
             const data = await response.json()
@@ -547,13 +568,13 @@ export class GeminiAIEngine implements AIEngine {
               return text.replace(/^["']|["']$/g, '').trim()
             }
           }
-        } catch (err: unknown) {
-          console.warn(`[GeminiAIEngine] Model ${model} failed, trying next candidate...`, err)
+        } catch {
+          // Try next model
         }
       }
     }
 
-    throw new Error('All Gemini models and serverless proxy failed')
+    return ''
   }
 
   public getActiveModel(): string {

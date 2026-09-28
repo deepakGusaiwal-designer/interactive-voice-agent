@@ -10,7 +10,8 @@ export default async function handler(req: Request) {
     })
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const rawKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
+  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '')
   if (!apiKey) {
     return new Response(
       JSON.stringify({ error: 'GEMINI_API_KEY_NOT_CONFIGURED' }),
